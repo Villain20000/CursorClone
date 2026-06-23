@@ -56,7 +56,16 @@ function FileItem({ id, depth }: { id: string; depth: number }) {
             <File size={16} className="text-[#858585]" />
           )}
         </span>
-        <span className="truncate">{file.name}</span>
+        <span className="truncate flex-1">{file.name}</span>
+        {file.gitStatus && (
+          <span className={cn(
+            "text-[10px] font-bold ml-2",
+            file.gitStatus === 'modified' && "text-amber-500",
+            file.gitStatus === 'added' && "text-green-500"
+          )}>
+            {file.gitStatus === 'modified' ? 'M' : 'U'}
+          </span>
+        )}
       </div>
       {isFolder && isOpen && file.children?.map((childId) => (
         <FileItem key={childId} id={childId} depth={depth + 1} />

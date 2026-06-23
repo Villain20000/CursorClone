@@ -10,6 +10,7 @@ export default function TerminalPanel() {
   const [history, setHistory] = useState<string[]>(['$ npm run dev', 'Server started on http://localhost:3000']);
   const [aiSuggestion, setAiSuggestion] = useState('npm install lucide-react');
   const [isSuggesting, setIsSuggesting] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const getAiSuggestion = async () => {
     setIsSuggesting(true);
@@ -60,7 +61,14 @@ export default function TerminalPanel() {
             className="flex-1 bg-transparent focus:outline-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
-                setHistory([...history, `$ ${input}`]);
+                const newHistory = [...history, `$ ${input}`];
+                if (input.includes('error') || input.includes('fail')) {
+                  newHistory.push('Error: Command failed with exit code 1');
+                  setLastError('Command failed with exit code 1');
+                } else {
+                  setLastError(null);
+                }
+                setHistory(newHistory);
                 setInput('');
               }
             }}
@@ -75,6 +83,15 @@ export default function TerminalPanel() {
           Suggested: <span className="text-white italic">{isSuggesting ? 'Thinking...' : aiSuggestion}</span>
         </div>
         <div className="flex gap-2">
+          {lastError && (
+            <button
+              onClick={getAiSuggestion}
+              className="flex items-center gap-1.5 bg-red-900/40 hover:bg-red-900/60 text-red-200 px-2 py-1 rounded text-xs transition-colors border border-red-500/30"
+            >
+              <Sparkles size={10} />
+              Fix with AI
+            </button>
+          )}
           <button
             onClick={getAiSuggestion}
             className="text-[10px] text-[#858585] hover:text-white transition-colors"

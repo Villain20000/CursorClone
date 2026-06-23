@@ -4,9 +4,9 @@ import { EditorState, FileNode } from '@/types';
 export const useEditorStore = create<EditorState>((set) => ({
   files: {
     'root': { id: 'root', name: 'root', type: 'folder', children: ['file1', 'file2', 'rules'] },
-    'file1': { id: 'file1', name: 'app.js', type: 'file', content: '// Welcome to Cursor Clone\nconsole.log("Hello World");', parentId: 'root' },
+    'file1': { id: 'file1', name: 'app.js', type: 'file', content: '// Welcome to Cursor Clone\nconsole.log("Hello World");', parentId: 'root', gitStatus: 'modified' },
     'file2': { id: 'file2', name: 'styles.css', type: 'file', content: 'body { background: #1e1e1e; color: white; }', parentId: 'root' },
-    'rules': { id: 'rules', name: '.cursorrules', type: 'file', content: 'Preferred language: TypeScript\nAlways use functional components.', parentId: 'root' },
+    'rules': { id: 'rules', name: '.cursorrules', type: 'file', content: 'Preferred language: TypeScript\nAlways use functional components.', parentId: 'root', gitStatus: 'added' },
   },
   openFileIds: [],
   activeFileId: null,

@@ -2,6 +2,7 @@
 
 import { Editor as MonacoEditor, OnMount } from '@monaco-editor/react';
 import { useEditorStore } from '@/store/useEditorStore';
+import AIReview from '@/components/AIReview';
 import { useRef } from 'react';
 
 export default function Editor() {
@@ -28,10 +29,19 @@ export default function Editor() {
       provideInlineCompletions: async (model, position) => {
         const lineContent = model.getLineContent(position.lineNumber);
         if (position.column <= lineContent.length) return;
+
+        // Simulate multi-line suggestion based on context
+        let suggestion = ' // AI suggested code here';
+        if (lineContent.includes('function')) {
+          suggestion = ' {\n  console.log("auto-completed body");\n}';
+        } else if (lineContent.includes('const')) {
+          suggestion = ' = await fetchData();';
+        }
+
         return {
           items: [
             {
-              insertText: ' // AI suggested code here',
+              insertText: suggestion,
               range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
             },
           ],
@@ -61,6 +71,7 @@ export default function Editor() {
 
   return (
     <div className="flex-1 overflow-hidden relative">
+      <AIReview />
       <MonacoEditor
         height="100%"
         language={getLanguage(activeFile.name)}

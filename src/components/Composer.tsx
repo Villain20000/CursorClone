@@ -2,14 +2,17 @@
 
 import { useComposerStore } from '@/store/useComposerStore';
 import { useEditorStore } from '@/store/useEditorStore';
+import { useCodebaseContext } from '@/hooks/useCodebaseContext';
 import DiffView from '@/components/DiffView';
-import { X, Sparkles, Send, FileCode, Check, Ban } from 'lucide-react';
+import { X, Sparkles, Send, FileCode, Check, Ban, FileIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Composer() {
-  const { isOpen, closeComposer, input, setInput, isGenerating, setIsGenerating, proposedChanges, setProposedChanges } = useComposerStore();
+  const { isOpen, closeComposer, input, setInput, isGenerating, setIsGenerating, proposedChanges, setProposedChanges, mentions, addMention, removeMention } = useComposerStore();
   const { files, updateFileContent } = useEditorStore();
+  const { getFullContext } = useCodebaseContext();
+  const [showMentionList, setShowMentionList] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -85,14 +88,52 @@ export default function Composer() {
                 <X size={18} />
               </button>
             </div>
-            <div className="p-4 flex flex-col gap-4">
+            <div className="p-4 flex flex-col gap-4 relative">
+              <div className="flex flex-wrap gap-2 mb-2">
+                {mentions.map(id => (
+                  <div key={id} className="flex items-center gap-1 bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs border border-purple-500/30">
+                    <FileIcon size={12} />
+                    {files[id]?.name}
+                    <button onClick={() => removeMention(id)} className="ml-1 hover:text-white">
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
               <textarea
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask Composer to generate code..."
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setInput(val);
+                  if (val.endsWith('@')) {
+                    setShowMentionList(true);
+                  } else {
+                    setShowMentionList(false);
+                  }
+                }}
+                placeholder="Ask Composer to generate code... (@ to mention files)"
                 className="w-full bg-[#2d2d2d] border border-[#3c3c3c] rounded-lg p-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[120px] resize-none"
               />
+
+              {showMentionList && (
+                <div className="absolute top-24 left-4 right-4 bg-[#252526] border border-[#333] rounded shadow-2xl z-50 max-h-40 overflow-y-auto p-1">
+                  {Object.values(files).filter(f => f.type === 'file').map(file => (
+                    <div
+                      key={file.id}
+                      onClick={() => {
+                        addMention(file.id);
+                        setShowMentionList(false);
+                        setInput(input.slice(0, -1));
+                      }}
+                      className="flex items-center gap-2 p-2 hover:bg-[#2a2d2e] rounded cursor-pointer transition-colors text-xs"
+                    >
+                      <FileIcon size={14} className="text-[#858585]" />
+                      {file.name}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {proposedChanges && proposedChanges.map((change, idx) => (
                 <div key={idx} className="flex flex-col gap-2">

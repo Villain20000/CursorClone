@@ -5,6 +5,7 @@ export interface FileNode {
   content?: string;
   parentId?: string;
   children?: string[]; // IDs of children
+  gitStatus?: 'modified' | 'added' | 'deleted';
 }
 
 export interface EditorState {
