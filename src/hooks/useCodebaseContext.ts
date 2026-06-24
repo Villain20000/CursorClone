@@ -1,9 +1,11 @@
 'use client';
 
 import { useEditorStore } from '../store/useEditorStore';
+import { useRAGStore } from '../store/useRAGStore';
 
 export const useCodebaseContext = () => {
   const { files } = useEditorStore();
+  const { knowledgeBase } = useRAGStore();
 
   const getFullContext = () => {
     // Collect all file contents into a single string
@@ -28,6 +30,15 @@ export const useCodebaseContext = () => {
     const cursorRules = Object.values(files).find(f => f.name === '.cursorrules');
     if (cursorRules) {
       context += `PROJECT RULES (.cursorrules):\n${cursorRules.content}\n\n`;
+    }
+
+    // Include Knowledge Base context (RAG)
+    if (knowledgeBase.length > 0) {
+      context += "ENTERPRISE KNOWLEDGE BASE:\n";
+      knowledgeBase.forEach(item => {
+        context += `- ${item.title} (${item.type}): ${item.content.substring(0, 500)}\n`;
+      });
+      context += "\n";
     }
 
     return context;

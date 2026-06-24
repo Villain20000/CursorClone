@@ -7,8 +7,9 @@ const mockContextSearch = (query: string) => {
 };
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const { messages, provider = 'openai' } = await req.json();
 
+  // In a real enterprise app, we would switch models here
   const result = await streamText({
     model: openai('gpt-4o'),
     system: `You are an expert AI pair programmer. You are integrated into a Cursor-like IDE.

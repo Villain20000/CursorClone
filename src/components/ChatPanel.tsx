@@ -3,12 +3,15 @@
 import { useChat } from '@ai-sdk/react';
 import { useEditorStore } from '@/store/useEditorStore';
 import { useCodebaseContext } from '@/hooks/useCodebaseContext';
-import { Send, X, Bot, User, Sparkles, Paperclip, AtSign } from 'lucide-react';
+import { useCollaborationStore } from '@/store/useCollaborationStore';
+import { Send, X, Bot, User, Sparkles, Paperclip, AtSign, BookMarked } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 export default function ChatPanel() {
   const { getFullContext } = useCodebaseContext();
+  const { sharedPrompts } = useCollaborationStore();
+  const [showSharedPrompts, setShowSharedPrompts] = useState(false);
   // @ts-ignore
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
@@ -80,12 +83,37 @@ export default function ChatPanel() {
               }
             }}
           />
+          {showSharedPrompts && (
+            <div className="absolute bottom-24 left-2 right-2 bg-[#252526] border border-[#333] rounded shadow-2xl z-50 p-1">
+              <div className="text-[10px] font-bold text-[#858585] px-2 py-1 uppercase">Shared Team Prompts</div>
+              {sharedPrompts.map(p => (
+                <div
+                  key={p.id}
+                  onClick={() => {
+                    handleInputChange({ target: { value: p.content } } as any);
+                    setShowSharedPrompts(false);
+                  }}
+                  className="p-2 hover:bg-[#2a2d2e] rounded cursor-pointer text-xs flex flex-col"
+                >
+                  <span className="text-white font-medium">{p.name}</span>
+                  <span className="text-[10px] text-[#858585]">by {p.author}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="absolute left-2 bottom-2 flex items-center gap-1">
             <button type="button" className="p-1.5 text-[#858585] hover:text-white transition-colors">
               <Paperclip size={14} />
             </button>
             <button type="button" className="p-1.5 text-[#858585] hover:text-white transition-colors">
               <AtSign size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSharedPrompts(!showSharedPrompts)}
+              className={cn("p-1.5 transition-colors", showSharedPrompts ? "text-purple-400" : "text-[#858585] hover:text-white")}
+            >
+              <BookMarked size={14} />
             </button>
           </div>
           <button

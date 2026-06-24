@@ -1,15 +1,16 @@
 'use client';
 
-import { Files, Search as SearchIcon, Code2, MessageSquare, Terminal, UserCircle, Settings } from 'lucide-react';
+import { Files, Search as SearchIcon, Code2, MessageSquare, Terminal, UserCircle, Settings, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function ActivityBar() {
+export default function ActivityBar({ setView }: { setView?: (v: 'editor' | 'admin') => void }) {
   const items = [
-    { icon: Files, label: 'Explorer', active: true },
+    { icon: Files, label: 'Explorer', active: true, view: 'editor' as const },
     { icon: SearchIcon, label: 'Search' },
     { icon: Code2, label: 'Source Control' },
     { icon: MessageSquare, label: 'AI Chat' },
     { icon: Terminal, label: 'Terminal' },
+    { icon: ShieldCheck, label: 'Admin Logs', view: 'admin' as const },
   ];
 
   return (
@@ -17,6 +18,9 @@ export default function ActivityBar() {
       {items.map((item, i) => (
         <div
           key={i}
+          onClick={() => {
+            if (item.view && setView) setView(item.view);
+          }}
           className={cn(
             "p-2 cursor-pointer transition-colors relative group",
             item.active ? "text-white" : "text-[#858585] hover:text-white"

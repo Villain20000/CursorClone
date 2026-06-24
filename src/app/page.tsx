@@ -6,21 +6,28 @@ import Editor from "@/components/Editor";
 import Composer from "@/components/Composer";
 import QuickOpen from "@/components/QuickOpen";
 import InlineChat from "@/components/InlineChat";
+import AdminDashboard from "@/components/AdminDashboard";
 import { useEditorStore } from "@/store/useEditorStore";
+import { useState } from "react";
 
 export default function Home() {
   const { activeFileId } = useEditorStore();
+  const [view, setView] = useState<'editor' | 'admin'>('editor');
 
   return (
-    <MainLayout>
+    <MainLayout setView={setView}>
       <Composer />
       <QuickOpen />
       <InlineChat />
-      <TabBar />
-      <div className="flex-1 flex flex-col min-h-0">
-        {activeFileId ? (
-          <Editor />
-        ) : (
+      {view === 'admin' ? (
+        <AdminDashboard />
+      ) : (
+        <>
+          <TabBar />
+          <div className="flex-1 flex flex-col min-h-0">
+            {activeFileId ? (
+              <Editor />
+            ) : (
           <div className="flex items-center justify-center h-full text-[#858585]">
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-4 text-white">Cursor Clone</h1>
@@ -31,8 +38,10 @@ export default function Home() {
               </div>
             </div>
           </div>
-        )}
-      </div>
+            )}
+          </div>
+        </>
+      )}
     </MainLayout>
   );
 }
