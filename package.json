@@ -1,0 +1,48 @@
+{
+  "name": "cursor-clone",
+  "version": "0.1.0",
+  "description": "A Cursor IDE clone with AI features powered by Ollama",
+  "main": "dist-electron/main.js",
+  "author": "CursorClone",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build && electron-builder",
+    "preview": "vite preview",
+    "start": "electron .",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "monaco-editor": "^0.52.2",
+    "ollama": "^0.5.13",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.4",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  },
+  "build": {
+    "appId": "com.cursorclone.app",
+    "productName": "CursorClone",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    }
+  }
+}

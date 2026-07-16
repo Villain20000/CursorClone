@@ -1,0 +1,255 @@
+// Prisma schema for CursorClone backend
+// Run: npx prisma db push (dev) or npx prisma migrate dev (prod)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ───────────────────────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String?   @unique
+  passwordHash  String?   // nullable — OAuth users have no password
+  displayName   String?
+  avatarUrl     String?
+  emailVerified Boolean   @default(false)
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  sessions          Session[]
+  refreshTokens     RefreshToken[]
+  oauthAccounts     OAuthAccount[]
+  ownedProjects     Project[]      @relation("OwnerProjects")
+  projectMembers    ProjectMember[]
+  files             FileSync[]
+  settings          UserSetting[]
+  aiConfigs         AIConfig[]      @relation("UserAIConfigs")
+  apiKeys           ApiKey[]
+  auditLogs         AuditLog[]
+
+  @@index([email])
+  @@index([role])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ─── Session (active login sessions) ───────────────────────────────
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  userAgent    String?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  expiresAt    DateTime
+  revoked      Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ─── Refresh Token ──────────────────────────────────────────────────
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique // hashed
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ─── OAuth Account (Google, GitHub, etc.) ──────────────────────────
+model OAuthAccount {
+  id             String       @id @default(cuid())
+  userId         String
+  provider       OAuthProvider
+  providerUserId String
+  accessToken    String?
+  refreshToken   String?
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+enum OAuthProvider {
+  GOOGLE
+  GITHUB
+}
+
+// ─── Project (workspace / repository) ──────────────────────────────
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  visibility  Visibility @default(PRIVATE)
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner      User            @relation("OwnerProjects", fields: [ownerId], references: [id], onDelete: Cascade)
+  members    ProjectMember[]
+  files      FileSync[]
+  aiConfigs  AIConfig[]
+  auditLogs  AuditLog[]
+
+  @@index([ownerId])
+  @@index([visibility])
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+  TEAM
+}
+
+// ─── Project Member ─────────────────────────────────────────────────
+model ProjectMember {
+  id        String     @id @default(cuid())
+  projectId String
+  userId    String
+  role      MemberRole @default(MEMBER)
+  joinedAt  DateTime   @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// ─── File Sync (cloud-synced files) ─────────────────────────────────
+model FileSync {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  path      String   // relative path within project
+  content   String?  @db.Text
+  size      Int      @default(0)
+  sha256    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, path])
+  @@index([projectId])
+  @@index([userId])
+}
+
+// ─── AI Config (per-user / per-project AI settings) ────────────────
+model AIConfig {
+  id            String   @id @default(cuid())
+  userId        String?
+  projectId     String?
+  provider      AIProvider @default(OLLAMA)
+  model         String
+  baseUrl       String?
+  apiKey        String?  @db.Text
+  temperature   Float    @default(0.2)
+  maxTokens     Int      @default(2048)
+  systemPrompt  String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?    @relation("UserAIConfigs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([userId])
+  @@index([projectId])
+}
+
+enum AIProvider {
+  OLLAMA
+  OPENAI
+  ANTHROPIC
+  CUSTOM
+}
+
+// ─── User Settings ──────────────────────────────────────────────────
+model UserSetting {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  theme     String   @default("dark")
+  fontSize  Int      @default(14)
+  keymap    String   @default("default")
+  tabSize   Int      @default(2)
+  wordWrap  Boolean  @default(false)
+  minimap   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── API Key (for external / programmatic access) ──────────────────
+model ApiKey {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  prefix    String   // first 8 chars of the key for display
+  hash      String   @unique
+  scopes    String[] @default([])
+  expiresAt DateTime?
+  lastUsedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([hash])
+}
+
+// ─── Audit Log ──────────────────────────────────────────────────────
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  projectId String?
+  action    String
+  resource  String?
+  details   String?  @db.Text
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([createdAt])
+  @@index([action])
+}

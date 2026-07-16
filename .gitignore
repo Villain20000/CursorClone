@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-electron
+dist-node
+dist-tsc
+release
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.DS_Store
